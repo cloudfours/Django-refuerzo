@@ -1,8 +1,8 @@
 from django.http import HttpResponse,HttpResponseRedirect
 from django.shortcuts import render,get_object_or_404,reverse
-from django.views import generics
+from django.views.generic import * 
 from app.models import Question,Choices
-
+from django.utils import timezone
 # Create your views here.
 
 
@@ -41,21 +41,30 @@ from app.models import Question,Choices
 #     """
 #     return render(request,'app/results.html',{'question':question})
 
-class IndexView(generics.ListViews):
+class IndexView(ListView):
     template_name="app/index.html"
     context_object_name="question_list"
     def get_queryset(self):
         """
         retorna las ultimas preguntas
         """
-        return Question.objects.order_by("-pub_date")[:5]
-class DetailView(generics.DetailView):
+        return Question.objects.filter(pub_date__lte=timezone.now()).order_by("-pub_date")[:5]
+class DetailView(DetailView):
     model=Question
-    template_name = "app/details.html"
+    template_name = "app/detail.html"
+    def get_queryset(self):
+        """
+        no perimitira que se muestras las preguntas del futuro
 
-class ResultView(generics.DetailView):
+        Returns:
+            solo debe retornar las de hoy
+        """
+        return Question.objects.filter(pub_date__lte=timezone.now())
+
+class ResultView(DetailView):
     model=Question
     template_name = "app/results.html"
+    
 
 def vote(request, id: int):
     question =  get_object_or_404(Question, pk=id)
